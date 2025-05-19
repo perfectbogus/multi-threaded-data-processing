@@ -75,6 +75,13 @@ impl Pipeline {
         let file = File::create(path).map_err(|e| PipelineError::OutputError(e.to_string()))?;
         let writer = BufWriter::new(file);
         
+        if path.extension().and_then(|ext| ext.to_str()) == Some("csv") {
+            self.write_csv(writer,records)
+        } else if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+            self.write_json(writer, records)
+        } else {
+            Err(PipelineError::OutputError("Unsupported output format".to_string()))
+        }
     }
     
     fn read_input(&self) -> Result<Vec<Record>, PipelineError> {
