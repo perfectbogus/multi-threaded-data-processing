@@ -29,6 +29,54 @@ impl Pipeline {
         Ok(records)
     }
     
+    fn process_record(&self, record: Record) -> Result<ProcessedRecord, PipelineError> {
+        let normalized_value = record.value / self.config.normalization_factor;
+        let is_significant = normalized_value > self.config.significance_threshold;
+        
+        Ok(ProcessedRecord {
+            id: record.id,
+            normalized_value,
+            category: record.category,
+            is_significant,
+        })
+    }
+    
+    fn process_data(&self, records: Vec<Record>) -> Result<Vec<ProcessedRecord>, PipelineError> {
+        let processed: Vec<ProcessedRecord> = records
+            .into_iter()
+            .map(|record| self.process_record(record))
+            .collect::<Result<Vec<_>, _>>()?;
+        
+        Ok(processed)
+    }
+    
+    fn write_csv(&self, writer: BufWriter<File>, records: &[ProcessedRecord]) -> Result<(), PipelineError> {
+        let mut csv_writer = csv::Writer::from_writer(writer);
+        
+        for record in records {
+            csv_writer
+                .serialize(record)
+                .map_err(|e| PipelineError::OutputError(e.to_string()))?;
+        }
+        
+        csv_writer.flush().map_err(|e| PipelineError::OutputError(e.to_string()))?;
+        Ok(())
+    }
+    
+    fn write_json(&self, writer: BufWriter<File>, records: &[ProcessedRecord]) -> Result<(), PipelineError> {
+        serde_json::to_writer_pretty(writer, records)
+            .map_err(|e| PipelineError::OutputError(e.to_string()))?;
+        
+        Ok(())
+    }
+    
+    fn write_output(&self, records: &[ProcessedRecord]) -> Result<(), PipelineError> {
+        let path = Path::new(&self.config.output_path);
+        let file = File::create(path).map_err(|e| PipelineError::OutputError(e.to_string()))?;
+        let writer = BufWriter::new(file);
+        
+    }
+    
     fn read_input(&self) -> Result<Vec<Record>, PipelineError> {
         let path = Path::new(&self.config.input_path);
         let file = File::open(path).map_err(PipelineError::InputError)?;
@@ -48,5 +96,15 @@ impl Pipeline {
         println!("Starting pipeline");
         
         let records = self.read_input()?;
+        println!("Read {} records", records.len());
+        
+        let processed_records = self.process_data(records)?;
+        println!("Processed {} records", processed_records.len());
+        
+        self.write_output(&processed_records)?;
+        println!("Pipeline completed successfully");
+
+        Ok(())
     }
+    
 }
