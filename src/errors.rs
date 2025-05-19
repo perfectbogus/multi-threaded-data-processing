@@ -8,9 +8,6 @@ pub enum PipelineError {
     #[error("Failed to parse data: {0}")]
     ParseError(String),
     
-    #[error("Processing error: {0}")]
-    ProcessingError(String),
-    
     #[error("Output error: {0}")]
     OutputError(String)
 }
