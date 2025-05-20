@@ -1,0 +1,6 @@
+id,normalized_value,category,is_significant
+001,1.005,A,true
+002,0.853,B,false
+003,1.207,A,true
+004,0.9520000000000001,C,true
+005,1.101,B,true

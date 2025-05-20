@@ -1,0 +1,14 @@
+[
+  {
+    "id": "001",
+    "normalized_value": 1.005,
+    "category": "A",
+    "is_significant": true
+  },
+  {
+    "id": "002",
+    "normalized_value": 0.853,
+    "category": "B",
+    "is_significant": false
+  }
+]

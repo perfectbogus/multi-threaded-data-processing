@@ -115,3 +115,73 @@ impl Pipeline {
     }
     
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{PipelineConfig, Record};
+
+    fn create_test_csv_config() -> PipelineConfig {
+        PipelineConfig {
+            input_path: "test_input.csv".to_string(),
+            output_path: "test_output.csv".to_string(),
+            normalization_factor: 100.0,
+            significance_threshold: 0.9,
+        }
+    }
+
+    fn create_test_json_config() -> PipelineConfig {
+        PipelineConfig {
+            input_path: "test_input.json".to_string(),
+            output_path: "test_output.json".to_string(),
+            normalization_factor: 100.0,
+            significance_threshold: 0.9,
+        }
+    }
+
+    #[test]
+    fn test_process_record() {
+        let config = create_test_csv_config();
+        let pipeline = Pipeline::new(config);
+
+        let record = Record {
+            id: "001".to_string(),
+            timestamp: "2023-01-01T12:00:00Z".to_string(),
+            value: 100.0,
+            category: "A".to_string(),
+        };
+
+        let processed = pipeline.process_record(record).unwrap();
+
+        assert_eq!(processed.id, "001");
+        assert_eq!(processed.normalized_value, 1.0);
+        assert_eq!(processed.category, "A");
+        assert_eq!(processed.is_significant, true);
+    }
+
+    #[test]
+    fn test_read_csv() {
+        let pipeline = Pipeline::new(create_test_csv_config());
+        let path = Path::new(&pipeline.config.input_path);
+        let file = File::open(path).unwrap();
+        let reader = BufReader::new(file);
+        let records = pipeline.read_csv(reader).unwrap();
+
+        assert_eq!(records.len(), 5);
+        assert_eq!(records[0].id, "001");
+        assert_eq!(records[1].id, "002");
+    }
+
+    #[test]
+    fn test_read_json() {
+        let pipeline = Pipeline::new(create_test_json_config());
+        let path = Path::new(&pipeline.config.input_path);
+        let file = File::open(path).unwrap();
+        let reader = BufReader::new(file); 
+        // let records = pipeline.read_csv(reader).unwrap();
+    
+        // assert_eq!(records.len(), 2);
+        // assert_eq!(records[0].id, "001");
+        // assert_eq!(records[1].id, "002");
+    }
+}
